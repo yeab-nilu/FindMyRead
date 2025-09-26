@@ -272,6 +272,14 @@ function rateBook(bookId, rating) {
             showNotification(data.message, 'success');
             // Update rating display
             updateRatingDisplay(bookId, rating);
+            // Restore button state
+            button.innerHTML = '<i class="fas fa-check"></i> Rated';
+            button.disabled = false;
+            setTimeout(() => {
+                if (document.body.contains(button)) {
+                    button.innerHTML = originalText;
+                }
+            }, 1500);
         } else {
             showNotification(data.message, 'error');
             button.innerHTML = originalText;

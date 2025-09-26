@@ -116,10 +116,9 @@ include 'includes/header.php';
                     <?php if (isLoggedIn()): ?>
                     <div class="book-actions">
                         <?php if (!in_array('want_to_read', $userLists)): ?>
-                        <a href="actions/add-to-list.php?book_id=<?php echo $bookId; ?>&list_type=want_to_read" 
-                           class="btn btn-primary">
+                        <button class="btn btn-primary" onclick="addToList(<?php echo $bookId; ?>, 'want_to_read')">
                             <i class="fas fa-plus"></i> Add to Want to Read
-                        </a>
+                        </button>
                         <?php else: ?>
                         <span class="btn btn-success">
                             <i class="fas fa-check"></i> In Want to Read List
@@ -127,13 +126,22 @@ include 'includes/header.php';
                         <?php endif; ?>
                         
                         <?php if (!in_array('currently_reading', $userLists)): ?>
-                        <a href="actions/add-to-list.php?book_id=<?php echo $bookId; ?>&list_type=currently_reading" 
-                           class="btn btn-outline">
+                        <button class="btn btn-outline" onclick="addToList(<?php echo $bookId; ?>, 'currently_reading')">
                             <i class="fas fa-book-open"></i> Start Reading
-                        </a>
+                        </button>
                         <?php else: ?>
                         <span class="btn btn-warning">
                             <i class="fas fa-book-open"></i> Currently Reading
+                        </span>
+                        <?php endif; ?>
+
+                        <?php if (!in_array('favorites', $userLists)): ?>
+                        <button class="btn btn-outline" onclick="addToList(<?php echo $bookId; ?>, 'favorites')">
+                            <i class="fas fa-heart"></i> Favorite
+                        </button>
+                        <?php else: ?>
+                        <span class="btn btn-danger">
+                            <i class="fas fa-heart"></i> In Favorites
                         </span>
                         <?php endif; ?>
                     </div>

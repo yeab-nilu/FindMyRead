@@ -88,9 +88,12 @@ include 'includes/header.php';
                             <i class="fas fa-eye"></i> View Details
                         </a>
                         <?php if (isLoggedIn()): ?>
-                        <a href="actions/add-to-list.php?book_id=<?php echo $book['id']; ?>&list_type=want_to_read" class="btn btn-outline btn-sm">
+                        <button class="btn btn-outline btn-sm" onclick="addToList(<?php echo $book['id']; ?>, 'want_to_read')">
                             <i class="fas fa-plus"></i> Add to List
-                        </a>
+                        </button>
+                        <button class="btn btn-outline btn-sm" onclick="addToList(<?php echo $book['id']; ?>, 'favorites')">
+                            <i class="fas fa-heart"></i> Favorite
+                        </button>
                         <?php endif; ?>
                     </div>
                 </div>

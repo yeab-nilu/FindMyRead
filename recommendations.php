@@ -57,12 +57,13 @@ function generateRecommendations($userId, $pdo) {
     $preferences = json_decode($user['reading_preferences'] ?? '{}', true);
     $favoriteGenres = $preferences['favorite_genres'] ?? [];
     
-    // Get user's read books
+    // Get user's read books and ratings
     $readBooks = $pdo->prepare("
-        SELECT b.*, g.name as genre_name
+        SELECT b.*, g.name as genre_name, r.rating as user_rating
         FROM user_reading_lists url
         JOIN books b ON url.book_id = b.id
         LEFT JOIN genres g ON b.genre_id = g.id
+        LEFT JOIN reviews r ON r.user_id = url.user_id AND r.book_id = url.book_id
         WHERE url.user_id = ? AND url.list_type = 'read'
     ");
     $readBooks->execute([$userId]);
@@ -70,9 +71,23 @@ function generateRecommendations($userId, $pdo) {
     
     $recommendations = [];
     
-    // 1. Content-based recommendations based on favorite genres
-    if (!empty($favoriteGenres)) {
-        $genrePlaceholders = str_repeat('?,', count($favoriteGenres) - 1) . '?';
+    // Derive weighted genre preferences from reads and ratings
+    $weightedGenres = [];
+    foreach ($userReadBooks as $rb) {
+        if (!empty($rb['genre_name'])) {
+            $weight = isset($rb['user_rating']) && $rb['user_rating'] > 0 ? (int)$rb['user_rating'] : 3; // default mid-weight if unrated
+            $weightedGenres[$rb['genre_name']] = ($weightedGenres[$rb['genre_name']] ?? 0) + $weight;
+        }
+    }
+    arsort($weightedGenres);
+    $topWeightedGenres = array_slice(array_keys($weightedGenres), 0, 5);
+
+    // Merge with explicit favorite genres
+    $effectiveGenres = array_values(array_unique(array_merge($topWeightedGenres, $favoriteGenres)));
+
+    // 1. Content-based recommendations based on effective genres and user ratings
+    if (!empty($effectiveGenres)) {
+        $genrePlaceholders = str_repeat('?,', count($effectiveGenres) - 1) . '?';
         $contentBased = $pdo->prepare("
             SELECT b.*, g.name as genre_name, g.color as genre_color
             FROM books b
@@ -85,22 +100,23 @@ function generateRecommendations($userId, $pdo) {
             ORDER BY b.average_rating DESC, b.total_reviews DESC
             LIMIT 10
         ");
-        $contentBased->execute(array_merge($favoriteGenres, [$userId]));
+        $contentBased->execute(array_merge($effectiveGenres, [$userId]));
         $contentBooks = $contentBased->fetchAll();
         
         foreach ($contentBooks as $book) {
             $recommendations[] = [
                 'book' => $book,
-                'reason' => "Because you like {$book['genre_name']} books",
+                'reason' => "Based on your interest in {$book['genre_name']} and your ratings",
                 'algorithm' => 'content_based',
                 'confidence' => 0.8
             ];
         }
     }
     
-    // 2. Collaborative filtering - books liked by users with similar preferences
+    // 2. Collaborative filtering - emphasize overlap with highly rated reads
     if (!empty($userReadBooks)) {
-        $readBookIds = array_column($userReadBooks, 'id');
+        $highlyRatedIds = array_column(array_filter($userReadBooks, function($b) { return (int)($b['user_rating'] ?? 0) >= 4; }), 'id');
+        $readBookIds = !empty($highlyRatedIds) ? $highlyRatedIds : array_column($userReadBooks, 'id');
         $placeholders = str_repeat('?,', count($readBookIds) - 1) . '?';
         
         $collaborative = $pdo->prepare("
@@ -133,7 +149,7 @@ function generateRecommendations($userId, $pdo) {
         foreach ($collabBooks as $book) {
             $recommendations[] = [
                 'book' => $book,
-                'reason' => "Liked by {$book['similar_users']} users with similar taste",
+                'reason' => "Liked by {$book['similar_users']} readers who enjoyed books you rated highly",
                 'algorithm' => 'collaborative',
                 'confidence' => min(0.9, 0.6 + ((int)$book['similar_users'] * 0.05))
             ];
@@ -321,9 +337,12 @@ function generateRecommendations($userId, $pdo) {
                             <a href="book-details.php?id=<?php echo $rec['recommended_book_id']; ?>" class="btn btn-primary btn-sm">
                                 <i class="fas fa-eye"></i> View Details
                             </a>
-                            <a href="actions/add-to-list.php?book_id=<?php echo $rec['recommended_book_id']; ?>&list_type=want_to_read" class="btn btn-outline btn-sm">
+                            <button class="btn btn-outline btn-sm" onclick="addToList(<?php echo $rec['recommended_book_id']; ?>, 'want_to_read')">
                                 <i class="fas fa-plus"></i> Add to List
-                            </a>
+                            </button>
+                            <button class="btn btn-outline btn-sm" onclick="addToList(<?php echo $rec['recommended_book_id']; ?>, 'favorites')">
+                                <i class="fas fa-heart"></i> Favorite
+                            </button>
                         </div>
                     </div>
                 </div>
