@@ -44,7 +44,6 @@ A comprehensive book recommendation website built with PHP and MySQL, featuring 
 - Books read tracking and statistics
 - Monthly and yearly reading goals
 - Genre preference analysis
-- Reading streak tracking
 - Progress visualization
 
 ### 5. Review & Rating System
@@ -77,8 +76,6 @@ A comprehensive book recommendation website built with PHP and MySQL, featuring 
 6. **book_recommendations** - AI-generated suggestions
 7. **user_interactions** - User behavior tracking
 8. **reading_analytics** - Reading statistics and goals
-9. **book_clubs** - Social reading groups
-10. **reading_challenges** - Gamification features
 
 ### Key Relationships
 - Users can have multiple reviews and reading lists

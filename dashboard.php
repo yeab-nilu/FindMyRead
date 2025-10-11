@@ -81,14 +81,6 @@ include 'includes/header.php';
             </div>
             
             <div class="stat-card">
-                <div class="stat-number"><?php echo $userStats['reading_streak'] ?? 0; ?></div>
-                <div class="stat-label">Day Streak</div>
-                <div class="stat-change positive">
-                    Keep it up!
-                </div>
-            </div>
-            
-            <div class="stat-card">
                 <div class="stat-number"><?php echo $listCountsData['want_to_read'] ?? 0; ?></div>
                 <div class="stat-label">Want to Read</div>
                 <div class="stat-change">
